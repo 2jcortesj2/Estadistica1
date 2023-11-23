@@ -8,14 +8,34 @@ from sklearn.preprocessing import scale
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.animation import FuncAnimation
 
-columns = ['age', 'creatinine_phosphokinase', 'ejection_fraction', 'platelets', 'serum_creatinine', 'serum_sodium', 'DEATH_EVENT']
+def remove_outliers_iqr(data):
+    
+    # Calculate the first quartile (Q1) and third quartile (Q3)
+    Q1 = np.percentile(data, 25)
+    Q3 = np.percentile(data, 75)
+    
+    # Calculate the interquartile range (IQR)
+    IQR = Q3 - Q1
+    
+    # Define the lower and upper bounds for outliers
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    
+    # Remove outliers
+    data = np.where(data>upper_bound, upper_bound, np.where(data<lower_bound,lower_bound,data))
+    return data[(data >= lower_bound) & (data <= upper_bound)]
+
+columns = ['age', 'creatinine_phosphokinase', 'ejection_fraction', 'platelets', 'serum_creatinine', 'serum_sodium']
 heart_df = pd.read_csv('heart_failure_clinical_records_dataset.csv', usecols= columns)
+
+for i in heart_df.columns:
+    heart_df[i] = remove_outliers_iqr(heart_df[i])
 
 scaler =StandardScaler()
 df_estand = scaler.fit_transform(heart_df)
 df_estand = pd.DataFrame(df_estand, columns=heart_df.columns)
 
-pca = PCA(n_components= 7) # Numero 7 por el numero de variables
+pca = PCA(n_components= 6) # Numero 6 por el numero de variables
 data_pca = pca.fit_transform(df_estand)
 
 # Hay que normalizar los datos para que tengan una escala en comun
